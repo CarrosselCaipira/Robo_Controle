@@ -1,9 +1,10 @@
-#include "joystick.hh"
 #include <unistd.h>
+#include "joystick.hh"
 #include "radio.hpp"
 
 #define INTERVALO_TEMPO 100
-#define NUM_ROBOS 1
+#define NUM_ROBOS 3 /**< LEGACY: MANTER EM 3 ENQUANTO O CODIGO DO ARDUINO NAO FOR CORRIGIDO */
+#define NUM_JOYSTICKS 1 /**< LEGACY: ATE ARRUMARMOS O CODIDO DO ARDUINO (TX E RX) PRECISAMOS DEFINIR O NUMERO DE JOYSTICKS CONECTADOS AO COMPUTADOR.*/
 #define MAX_VELOCIDADE 7
 #define BOTAO_L1 4
 #define BOTAO_R1 5
@@ -18,20 +19,20 @@ struct botoesControle {
 };
 
 struct Controle{
-	botoesControle botoes_pressionados;
-	Joystick *joystick;
+	botoesControle botoes_pressionados; /**< indica quais botoes do controle estao pressionados no momento */
+	Joystick *joystick; /**< Ponteiro para instancia de joystick */
 };
 
 int main() {
 	std::vector<Controle> controle(NUM_ROBOS); /**< aloca o vetor de structs de joysticks e os botoes que estao precionados no joystick. */
-	for(int i = 0 ; i < NUM_ROBOS; i++)
-		controle[i].joystick = new Joystick(i + 1); /**< instancia do joystic i que controlara o robo i. */
+	for(int i = 0 ; i < NUM_JOYSTICKS; i++)
+		controle[i].joystick = new Joystick(i + 1); /**< instancia do joystic i + 1 controlara o robo i. */
 
 	std::vector<Robo> robos(NUM_ROBOS); /**< vetor com os NUM_ROBOS robos. */
 	Radio radio(robos); /**< instancia de radio para que possamos enviar os comandos para os robos. */
 
 	// deteccao dos joysticks
-	for(int i = 0; i < NUM_ROBOS; i++) {
+	for(int i = 0; i < NUM_JOYSTICKS; i++) {
 		// Determinando se eh possivel detectar e utilizar o joystick i
 		if (!controle[i].joystick->isFound()) {
 			printf("Joystick %d nao encontrado. Saindo...\n", i);
@@ -44,7 +45,7 @@ int main() {
 		usleep(INTERVALO_TEMPO);
 
 		// para cada robo e controle determinar quais os botoes estao precionados e quais nao estao (ou foram liberados agora)
-		for(int i = 0; i < NUM_ROBOS; i++) {
+		for(int i = 0; i < NUM_JOYSTICKS; i++) {
 			JoystickEvent evento_joystick_i;
 			// Detectando se houve eventos disparados pelo joystick i
 			if (controle[i].joystick->sample(&evento_joystick_i)) {
@@ -77,8 +78,8 @@ int main() {
 			}
 		}
 		// colocando os valores de velocidade nos robos. Os valores vao de -MAX_VELOCIDADE a MAX_VELOCIDADE velocidade maxima para cada roda
-		// note que se L1 e L2 estiverem precionados, a velocidade da roda esquerda eh zero. O mesmo para a roda direita. 
-		unsigned char roda_esquerda = 0; 
+		// note que se L1 e L2 estiverem precionados, a velocidade da roda esquerda eh zero. O mesmo para a roda direita.
+		unsigned char roda_esquerda = 0;
 		unsigned char roda_direita = 0;
 		for(int i = 0; i < NUM_ROBOS; i++) {
 			// se L1 esta precionado, a roda esquerda do robo gira para tras
