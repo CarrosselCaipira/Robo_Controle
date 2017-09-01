@@ -2,10 +2,11 @@
 #include "joystick.hh"
 #include "radio.hpp"
 
-#define INTERVALO_TEMPO 100
+#define INTERVALO_TEMPO 115200 /**< Intervalo de tempo para a deteccao de eventos do joystick. Deve ser igual ao bit rate da porta serial para nao sobrecarega-la */
 #define NUM_ROBOS 3 /**< LEGACY: MANTER EM 3 ENQUANTO O CODIGO DO ARDUINO NAO FOR CORRIGIDO */
 #define NUM_JOYSTICKS 1 /**< LEGACY: ATE ARRUMARMOS O CODIDO DO ARDUINO (TX E RX) PRECISAMOS DEFINIR O NUMERO DE JOYSTICKS CONECTADOS AO COMPUTADOR.*/
-#define MAX_VELOCIDADE 7
+#define MAX_VELOCIDADE_FRENTE 7 /**< 0111(7). Vai para frente (bit mais significativo indica sentido da rotacao) com velocidade maxima */
+#define MAX_VELOCIDADE_TRAZ 15 /**< 0111(7) or 1000(8) = 1111(15). Vai para tras (bit mais significativo indica sentido da rotacao) com velocidade maxima */
 #define BOTAO_L1 4
 #define BOTAO_R1 5
 #define BOTAO_L2 6
@@ -26,7 +27,7 @@ struct Controle{
 int main() {
 	std::vector<Controle> controle(NUM_ROBOS); /**< aloca o vetor de structs de joysticks e os botoes que estao precionados no joystick. */
 	for(int i = 0 ; i < NUM_JOYSTICKS; i++)
-		controle[i].joystick = new Joystick(i + 1); /**< instancia do joystic i + 1 controlara o robo i. */
+		controle[i].joystick = new Joystick(i); /**< instancia do joystic i controlara o robo i. */
 
 	std::vector<Robo> robos(NUM_ROBOS); /**< vetor com os NUM_ROBOS robos. */
 	Radio radio(robos); /**< instancia de radio para que possamos enviar os comandos para os robos. */
@@ -77,25 +78,25 @@ int main() {
 				}
 			}
 		}
-		// colocando os valores de velocidade nos robos. Os valores vao de -MAX_VELOCIDADE a MAX_VELOCIDADE velocidade maxima para cada roda
-		// note que se L1 e L2 estiverem precionados, a velocidade da roda esquerda eh zero. O mesmo para a roda direita.
-		unsigned char roda_esquerda = 0;
-		unsigned char roda_direita = 0;
+
+		unsigned char rodaEsquerda = 0; /**< indica a velocidade atual da roda esquerda. */
+  	unsigned char rodaDireita = 0; /**< indica a velocidade atual da roda direita. */
+		// colocando os valores de velocidade nos robos.
 		for(int i = 0; i < NUM_ROBOS; i++) {
 			// se L1 esta precionado, a roda esquerda do robo gira para tras
 			if(controle[i].botoes_pressionados.b_L1)
-				roda_esquerda -= MAX_VELOCIDADE;
-			// se R1 esta precionado, a roda direita do robo gira para tras
-			if(controle[i].botoes_pressionados.b_R1)
-				roda_direita -= MAX_VELOCIDADE;
+				rodaEsquerda = MAX_VELOCIDADE_TRAZ;
 			// se L2 esta precionado, a roda esquerda do robo gira para frente
 			if(controle[i].botoes_pressionados.b_L2)
-				roda_esquerda += MAX_VELOCIDADE;
+				rodaEsquerda = MAX_VELOCIDADE_FRENTE;
+			// se R1 esta precionado, a roda direita do robo gira para tras
+			if(controle[i].botoes_pressionados.b_R1)
+				rodaDireita = MAX_VELOCIDADE_TRAZ;
 			// se R2 esta precionado, a roda direita do robo gira para frente
 			if(controle[i].botoes_pressionados.b_R2)
-				roda_direita += MAX_VELOCIDADE;
+				rodaDireita = MAX_VELOCIDADE_FRENTE;
 			// gravando valores de velocidade nos robos
-			robos[i].setVelocidadeAtualRobo(roda_esquerda, roda_direita);
+			robos[i].setVelocidadeAtualRobo(rodaEsquerda, rodaDireita);
 		}
 		// faz o envio das velocidades para todos os robos via radio
 		radio.enviaDados();
