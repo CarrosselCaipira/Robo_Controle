@@ -4,7 +4,7 @@
 
 #define INTERVALO_TEMPO 115200 /**< Intervalo de tempo para a deteccao de eventos do joystick. Deve ser igual ao bit rate da porta serial para nao sobrecarega-la */
 #define NUM_ROBOS 3 /**< LEGACY: MANTER EM 3 ENQUANTO O CODIGO DO ARDUINO NAO FOR CORRIGIDO */
-#define NUM_JOYSTICKS 1 /**< LEGACY: ATE ARRUMARMOS O CODIDO DO ARDUINO (TX E RX) PRECISAMOS DEFINIR O NUMERO DE JOYSTICKS CONECTADOS AO COMPUTADOR.*/
+#define NUM_JOYSTICKS 2 /**< LEGACY: ATE ARRUMARMOS O CODIDO DO ARDUINO (TX E RX) PRECISAMOS DEFINIR O NUMERO DE JOYSTICKS CONECTADOS AO COMPUTADOR.*/
 #define MAX_VELOCIDADE_FRENTE 7 /**< 0111(7). Vai para frente (bit mais significativo indica sentido da rotacao) com velocidade maxima */
 #define MAX_VELOCIDADE_TRAZ 15 /**< 0111(7) or 1000(8) = 1111(15). Vai para tras (bit mais significativo indica sentido da rotacao) com velocidade maxima */
 #define BOTAO_L1 4
@@ -25,7 +25,7 @@ struct Controle{
 };
 
 int main() {
-	std::vector<Controle> controle(NUM_ROBOS); /**< aloca o vetor de structs de joysticks e os botoes que estao precionados no joystick. */
+	std::vector<Controle> controle(NUM_JOYSTICKS); /**< aloca o vetor de structs de joysticks e os botoes que estao precionados no joystick. */
 	for(int i = 0 ; i < NUM_JOYSTICKS; i++)
 		controle[i].joystick = new Joystick(i); /**< instancia do joystic i controlara o robo i. */
 
@@ -79,10 +79,10 @@ int main() {
 			}
 		}
 
-		unsigned char rodaEsquerda = 0; /**< indica a velocidade atual da roda esquerda. */
-  	unsigned char rodaDireita = 0; /**< indica a velocidade atual da roda direita. */
 		// colocando os valores de velocidade nos robos.
-		for(int i = 0; i < NUM_ROBOS; i++) {
+		for(int i = 0; i < NUM_JOYSTICKS; i++) {
+      unsigned char rodaEsquerda = 0; /**< indica a velocidade atual da roda esquerda. */
+      unsigned char rodaDireita = 0; /**< indica a velocidade atual da roda direita. */
 			// se L1 esta precionado, a roda esquerda do robo gira para tras
 			if(controle[i].botoes_pressionados.b_L1)
 				rodaEsquerda = MAX_VELOCIDADE_TRAZ;
