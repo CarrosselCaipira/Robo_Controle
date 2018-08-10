@@ -7,12 +7,12 @@ enum MODO_OPERACAO {
   CONTROLE_ANALOGICO, /* Usaremos o analogico para controlar o sentido do robo (esquerda direita) e o L2 e R2 para controlar a direção (Ré e Frente, respectivamente). */
   CONTROLE_LR, /* Usaremos apenas os botões L e R para o controle dos robos. Os botões L (L1 para trás L2 para frente) controla a roda esquerda e os botões R (R1 para trás R2 para frente) controlam a roda direita. */
 
-  /* ADICIONAR NOVOS MODOS DE OPERAÇÃO ANTES DE TOTAL_MODO_OPERACAO */
-  TOTAL_MODO_OPERACAO
+  /* ADICIONAR NOVOS MODOS DE OPERAÇÃO ANTES DE TOTAL_MODO_OPERACAO. Ao adicionar novos elementos acima, atualizar o README.md na seção 'Rodando o programa', Colocando o limite de MODO_OPERACAO igual TOTAL_MODO_OPERACAO - 1.  */
+  TOTAL_MODO_OPERACAO /* 2 */
 };
 
 static const int INTERVALO_TEMPO = 115200; /**< Intervalo de tempo para a deteccao de eventos do joystick. Deve ser igual ao bit rate da porta serial para nao sobrecarega-la */
-static const int NUM_ROBOS = 3; /**< LEGACY: MANTER EM 3 ENQUANTO O CODIGO DO ARDUINO NAO FOR CORRIGIDO - Deve ser igual ao esperado no código dos arduinos (pois o tamanho do buffer não variável) */
+static const int NUM_ROBOS = 3; /**< LEGACY: MANTER EM 3 ENQUANTO O CODIGO DO ARDUINO NAO FOR CORRIGIDO - Deve ser igual ao esperado no código dos arduinos (pois o tamanho do buffer não variável). Ao alterar esta variável, atualizar também o README.md na seção 'Rodando o programa', corrigindo o numero máximo de NUM_JOYSTICKS para ao igual a NUM_ROBOS. */
 static const unsigned char MAX_VELOCIDADE_FRENTE = 7; /**< 0111(7). Vai para frente (bit mais significativo indica sentido da rotacao) com velocidade maxima */
 static const unsigned char MAX_VELOCIDADE_TRAZ = 15; /**< 0111(7) or 1000(8) = 1111(15). Vai para tras (bit mais significativo indica sentido da rotacao) com velocidade maxima */
 
@@ -43,7 +43,7 @@ struct Controle{
 int main(int argc, char const *argv[]) {
 
   if (argc != 3) {
-    std::cerr << "ERROR: Numero errado de argumentos. " << "Numero de argumentos: " << argc << ". Uso: './Robos_Joystick NUM_JOYSTICKS MODO_OPERACAO' onde NUM_JOYSTICKS eh o numero de controles a serem usados. Deve sao aceitos valores numericos de 1 a " <<  NUM_ROBOS << " (inclusivo para ambas extremidades [1 a " <<  NUM_ROBOS << "]) e MODO_OPERACAO valores numericos de 0 a " << TOTAL_MODO_OPERACAO - 1 << std::endl << std::endl << "TOTAL_MODO_OPERACAO = 0:  Usaremos o analogico para controlar o sentido do robo (esquerda direita) e o L2 e R2 para controlar a direção (Ré e Frente, respectivamente). "<< std::endl << "TOTAL_MODO_OPERACAO = 1: Usaremos apenas os botões L e R para o controle dos robos. Os botões L (L1 para trás L2 para frente) controla a roda esquerda e os botões R (R1 para trás R2 para frente) controlam a roda direita." << std::endl << "Saindo..." << std::endl;
+    std::cerr << "ERROR: Numero errado de argumentos. " << "Numero de argumentos: " << argc << ". Uso: './Robos_Joystick NUM_JOYSTICKS MODO_OPERACAO' onde NUM_JOYSTICKS eh o numero de controles a serem usados. Sao aceitos valores numericos de 1 a " <<  NUM_ROBOS << " (inclusivo para ambas extremidades [1 a " <<  NUM_ROBOS << "]) e MODO_OPERACAO valores numericos de 0 a " << TOTAL_MODO_OPERACAO - 1 << std::endl << std::endl << "TOTAL_MODO_OPERACAO = 0:  Usaremos o analogico para controlar o sentido do robo (esquerda direita) e o L2 e R2 para controlar a direção (Ré e Frente, respectivamente). "<< std::endl << "TOTAL_MODO_OPERACAO = 1: Usaremos apenas os botões L e R para o controle dos robos. Os botões L (L1 para trás L2 para frente) controla a roda esquerda e os botões R (R1 para trás R2 para frente) controlam a roda direita." << std::endl << "Saindo..." << std::endl;
 
     exit(1);
   }
@@ -82,6 +82,7 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+  /* LOOP Principal */
 	while (true) {
 		// restricao de tempo para fazermos a leitura e envio das velocidades aos robos
     usleep(INTERVALO_TEMPO);
@@ -94,7 +95,7 @@ int main(int argc, char const *argv[]) {
       // std::cout << evento_joystick_i << '\n';
       /* END DEBUG */
 
-			// Detectando se houve eventos disparados pelo joystick i
+			/* DETECÇÃO DE EVENTOS DISPARADOS PELO JOYSTICK i */
 			if (controle[i].joystick->sample(&evento_joystick_i)) {
 				// Detectando se eh um botao que esta sendo pressionado ou liberado (pode ser um dos analogicos disparando o evento)
 				if (evento_joystick_i.isButton()) {
@@ -132,7 +133,7 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		// colocando os valores de velocidade nos robos.
+		/* SETANDO OS VALORES DE VELOCIDADE DOS ROBOS */
 		for(int i = 0; i < NUM_JOYSTICKS; i++) {
       unsigned char rodaEsquerda = 0; /**< indica a velocidade atual da roda esquerda. */
       unsigned char rodaDireita = 0; /**< indica a velocidade atual da roda direita. */
