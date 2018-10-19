@@ -2,7 +2,7 @@
 
 Programa para o controle dos robôs do VSS através dos controles de PS2. Este código foi criado para funcionar especificamente com sistemas Linux.
 
-Para compilar apenas execute o script build-robos-joystick.sh e execute o programa digitando ./Robos_Joystick
+Para compilar apenas execute o script `build-robos-joystick.sh` e execute o programa digitando `./Robos_Joystick`
 Este código fez uso da biblioteca joystick desenvolvida por [drewnoakes](https://github.com/drewnoakes/joystick).
 
 ----
@@ -11,10 +11,18 @@ Este código fez uso da biblioteca joystick desenvolvida por [drewnoakes](https:
 Para compilar o programa é necessário apenas rodar o script:
 `./build-robos-joystick.sh`
 
-Obs.: Talves seja necessário tornar o script executável, para isso execute: `chmod +x build-robos-joystick.sh` e execute o comando acima novamente.
+>Obs.: Talves seja necessário tornar o script executável, para isso execute: `chmod +x build-robos-joystick.sh` e execute o comando acima novamente.
 
 ----
 ## Rodando o programa
+
+Para que o programa funcione sem a necessidade de `root`, é necessário que usuário pertença necessáriamente ao grupo `dialout`. Existem casos em que é necessário pertencer **também** aos grupos `lock`, `uucp` e `tty`. Para isso, execute o seguinte comando:
+
+`sudo usermod -a  $USER -G dialout,lock,tty,uucp`
+
+Após isso efetue o logout de seu usuário ou reinicie o computador para que estas modificações tenham efeito.
+
+>Observação: Caso ocorra um erro durante a inclusão de seu usuário a um grupo, tente rodar o programa assim mesmo, pois pode ser que pertencer ao grupo em questão não seja necessário em sua distribuição.
 
 O programa agora possui um modo de configuração. Não é possível executá-lo sem informar o número de controles conectados e o modo de operação.
 
