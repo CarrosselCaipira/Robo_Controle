@@ -32,27 +32,29 @@
  *  @todo Futuramente tambem implementaremos o recebimento.
  */
 class Radio {
-	std::vector<Robo>& vector_robos; /**< referencia para o vector que contem os robos  */
-	struct termios dispositivo_tty; /**< estrutura de configuracao da porta serial */
-	int USB; /**< descritor da porta serial a ser lida */
-	const char* caminho_dispositivo = "/dev/ttyUSB0"; /**< caminho para a porta a ser aberta para comunicao serial */
+  std::vector<Robo>& vector_robos; /**< referencia para o vector que contem os robos  */
+  struct termios dispositivo_tty; /**< estrutura de configuracao da porta serial */
+  int USB; /**< descritor da porta serial a ser lida */
+  const char* caminho_dispositivo = "/dev/ttyUSB0"; /**< caminho para a porta a ser aberta para comunicao serial */
 
-	public:
-	 /** @fn Radio(std::vector<Robo>& v)
-	  *  @brief Faz a configuracao da porta serial para efetuar a comunicao e a 'acoplagem' do vetor de robos.
-	  *  @param std::vector<Robo>& v Vetor contendo os robos do time.
-	  */
-		Radio(std::vector<Robo>& v);
+  public:
+    static const speed_t VELOCIDADE_SERIAL = B115200; /* frequencia de input e output da porta serial. Bit rate padrao de 115200. Disponíveis: 115200, 9600. Mantida publica para ser usada por outras classes que fazem uso do radio. */
 
-	 /** @fn ~Radio()
-	  *  @brief Fecha a porta serial e termina a comunicao.
-	  */
-		~Radio();
+   /** @fn Radio(std::vector<Robo>& v)
+    *  @brief Faz a configuracao da porta serial para efetuar a comunicao e a 'acoplagem' do vetor de robos.
+    *  @param std::vector<Robo>& v Vetor contendo os robos do time.
+    */
+    Radio(std::vector<Robo>& v);
 
-		/** @fn enviaDados()
-		 *  @brief Faz o envio dos valores de velocidade de estadoAtualRobo de cada robo em campo
-		 */
-		void enviaDados();
+   /** @fn ~Radio()
+    *  @brief Fecha a porta serial e termina a comunicao.
+    */
+    ~Radio();
+
+    /** @fn enviaDados()
+     *  @brief Faz o envio dos valores de velocidade de estadoAtualRobo de cada robo em campo
+     */
+    void enviaDados();
 
 };
 
