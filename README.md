@@ -2,16 +2,19 @@
 
 Programa para o controle dos robôs do VSS através dos controles de PS2. Este código foi criado para funcionar especificamente com sistemas Linux.
 
-Para compilar apenas execute o script `build-robos-joystick.sh` e execute o programa digitando `./Robos_Joystick`
+Para compilar apenas execute o script `configure.sh` e execute o programa digitando `./Robo_Controle`
 Este código fez uso da biblioteca joystick desenvolvida por [drewnoakes](https://github.com/drewnoakes/joystick).
 
 ----
 ## Compilando
 
-Para compilar o programa é necessário apenas rodar o script:
-`./build-robos-joystick.sh`
+Para compilar o programa é necessário os seguintes pacotes instalados em seu sistema:
+ - Um compilador C++ (`gcc-c++` ou `clang`); 
+ - `cmake`
 
->Obs.: Talves seja necessário tornar o script executável, para isso execute: `chmod +x build-robos-joystick.sh` e execute o comando acima novamente.
+Com os pacotes instalados, é apenas necessário rodar o script: `./configure.sh`
+
+>Obs.: Talves seja necessário tornar o script executável, para isso execute: `chmod +x configure.sh` e execute o comando acima novamente.
 
 ----
 ## Rodando o programa
@@ -27,11 +30,11 @@ Após isso efetue o logout de seu usuário ou reinicie o computador para que est
 O programa agora possui um modo de configuração. Não é possível executá-lo sem informar o número de controles conectados e o modo de operação.
 
 O programa deve ser executado da seguinte forma:
-`./Robos_Joystick NUM_JOYSTICKS MODO_OPERACAO`
+`./Robo_Controle NUM_JOYSTICKS MODO_OPERACAO`
 
 Exemplo:
 
-`./Robos_Joystick 1 0`
+`./Robo_Controle 1 0`
 
 Isso significa que usaremos um controle (logo, apenas um robô) e operaremos ele utlizando o botão analogico do controle (mais detalhes sobre modos de operação abaixo).
 
