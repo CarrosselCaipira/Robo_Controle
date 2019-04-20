@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # criando a pasta onde será compilado o programa
-mkdir build
+mkdir build -p
 # entrando na pasta
 cd build
 # executando o cmake para gerar o arquivo make
