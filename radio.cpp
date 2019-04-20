@@ -3,8 +3,9 @@
 /* o trecho: vector_robos(v) serve para acoplar o vector com os robos a classe de transmissao */
 Radio::Radio(std::vector<Robo>& v) : vector_robos(v) {
 
-    /* abrindo a porta serial para leitura e escrita */
-    this->USB = open(this->caminho_dispositivo, O_RDWR| O_NOCTTY | O_NDELAY);
+    /* abrindo a porta serial para leitura e escrita (O_RDWR), não irá  se tornar o terminal controlador do processo (O_NOCTTY), e faz uso de I/O não bloqueante (O_NDELAY) */
+//    this->USB = open(this->caminho_dispositivo, O_RDWR| O_NOCTTY | O_NDELAY);
+    this->USB = open(this->caminho_dispositivo, O_RDWR| O_NOCTTY);
 
     /* setando todos os campos de dispositivo_tty com 0 (vamos evitar surpresas...) */
     memset(&this->dispositivo_tty, 0, sizeof(this->dispositivo_tty));
