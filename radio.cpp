@@ -70,10 +70,6 @@ Radio::~Radio() {
 
 /* enviando um byte para cada roda. Futuramente armazenaremos em um byte os valores de velocidade de ambas as rodas >> necessario corrigir robo.hpp robo.cpp tipoEstruturas.hpp e os codigos do arduino. */
 void Radio::enviaDados() {
-    /* aparentemente desnecessario, descomentar em caso de problemas */
-    /* descarta dos dados atualmente na porta ('lixo' de memoria) */
-    tcflush(this->USB, TCIOFLUSH);
-
     /* o primeiro (dados[0]) eh o caractere inicial para delimitar o inicio de uma nova sequencia de comandos */
     /* o segundo (dados[1]) eh o valor de velocidade do motor da roda esquerda do primeiro robo */
     /* o terceiro (dados[2]) eh o valor de velocidade do motor da roda direita do primeiro robo */
