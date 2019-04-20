@@ -3,58 +3,23 @@
 /* o trecho: vector_robos(v) serve para acoplar o vector com os robos a classe de transmissao */
 Radio::Radio(std::vector<Robo>& v) : vector_robos(v) {
 
-    /* abrindo a porta serial para leitura e escrita (O_RDWR), não irá  se tornar o terminal controlador do processo (O_NOCTTY), e faz uso de I/O não bloqueante (O_NDELAY) */
-//    this->USB = open(this->caminho_dispositivo, O_RDWR| O_NOCTTY | O_NDELAY);
-    this->USB = open(this->caminho_dispositivo, O_RDWR| O_NOCTTY);
+    /* Setando o baundrate de input e output do radio iguais */
+    this->serial.setBaudRate(this->VELOCIDADE_SERIAL, QSerialPort::AllDirections);
+    /* setando qual o caminho que se encontra / que foi montado o rádio */
+    this->serial.setPortName(this->caminho_dispositivo);
 
-    /* setando todos os campos de dispositivo_tty com 0 (vamos evitar surpresas...) */
-    memset(&this->dispositivo_tty, 0, sizeof(this->dispositivo_tty));
-
-    /* Tratamento de Erros */
-    /* Testado se foi possivel abrir a porta serial */
-    if(this->USB < 0) {
-        std::cerr << "Erro " << errno << " @Radio->open " << this->caminho_dispositivo << ": " << std::strerror(errno) << std::endl;
-        exit(1); /**< Nao permite que o programa rode se nao foi possivel configurar a porta serial */
+    /* tentando abrir o dispositivo para leitura e escrita */
+    if (!serial.open(QIODevice::ReadWrite)) {
+        std::cerr << "Erro " << errno << " @Radio->open: " << std::strerror(errno) << std::endl;
+        exit(1); /* Nao permite que o programa rode se nao foi possivel configurar a porta serial */
     }
 
-    /* Testando se a porta serial aberta esta apontando para um dispositivo TTY (nosso radio eh TTY) */
-    if(isatty(this->USB) < 0) {
-        std::cerr << "Erro " << errno << " @Radio->isatty: " << std::strerror(errno) << std::endl;
-        exit(1); /**< Nao permite que o programa rode se nao foi possivel configurar a porta serial */
-    }
-    /* Testando se a atual configuracao da porta serial pode ser lida */
-    if(tcgetattr( this->USB, &this->dispositivo_tty ) < 0 ) {
-        std::cerr << "Erro " << errno << " @Radio->tcgetattr: " << std::strerror(errno) << std::endl;
-        exit(1); /**< Nao permite que o programa rode se nao foi possivel configurar a porta serial */
-    }
-    /* Setando a frequencia de input e output do radio */
-    if(cfsetspeed(&this->dispositivo_tty, Radio::VELOCIDADE_SERIAL) < 0){
-        std::cerr << "Erro " << errno << " @Radio->cfsetospeed: " << std::strerror(errno) << std::endl;
-        exit(1); /**< Nao permite que o programa rode se nao foi possivel configurar a porta serial */
-    }
+    /* Dois bytes para cada robo (um para cada roda) mais um, inicial, que indica o inicio de uma nova sequência (header). */
+    this->num_bytes_enviados = 2 * this->vector_robos.size() + 1;
 
-    /* Setando outras configuracoes da porta (no momento: aceite que funciona)*/
-    this->dispositivo_tty.c_iflag = IGNBRK | IGNPAR;
-    this->dispositivo_tty.c_oflag = 0;
-    this->dispositivo_tty.c_lflag = 0;
-    this->dispositivo_tty.c_cflag = Radio::VELOCIDADE_SERIAL | CS8;
-
-    /* Setagem para realizar a 'leitura contada', a leitura da porta serial eh efetuada apenas se o buffer de recebimento possui VMIN bytes(chars). Detalhes mais aprofundados podem ser encontrados em: VSS/Docs/Comunicacao_Serial/Understanding UNIX termios VMIN and VTIME.pdf na ultima pagina no topico VMIN > 0 and VTIME = 0 */
-    this->dispositivo_tty.c_cc[VMIN] = 1; /**< aguarda que seja recebido 1 byte (char) para efetuar a leitura. Senao tiver chego, bloqueia o processo. */
-    this->dispositivo_tty.c_cc[VTIME] = 0; /**< nao ha timing para fazer a leitura da porta */
-
-    /* descarta dos dados atualmente na porta ('lixo' de memoria)*/
-    tcflush(this->USB, TCIOFLUSH);
-    /* Aplicando as configuracoes.
-    * TCSANOW = aplica instantaneamente as configuracoes.
-    */
-    if (tcsetattr(this->USB, TCSANOW, &this->dispositivo_tty ) < 0) {
-        std::cerr << "Error " << errno << " @Radio->tcsetattr " << std::strerror(errno) << std::endl;
-        exit(1); /**< Nao permite que o programa rode se nao foi possivel configurar a porta serial */
-    }
-    this->num_bytes_enviados = 2 * this->vector_robos.size() + 1; /**< Dois bytes para cada robo (um para cada roda) mais um, inicial, que indica o inicio de uma nova sequência. */
-
-    Radio::calculaTempoSleep();
+    /* allocando o array que será enviado aos robos. sempre terá o primeiro byte fixo, logo, setamos ele aqui. */
+    this->dados_envio = (char*) malloc(this->num_bytes_enviados);
+    this->dados_envio[0] = this->caractere_inicial;
 }
 
 Radio::~Radio() {
@@ -65,35 +30,61 @@ Radio::~Radio() {
     if (this->thread_envio->joinable())
         Radio::terminaComunicacao();
 
-    close(this->USB);
+    /* desalocando o array de dados enviados pela serial */
+    free(this->dados_envio);
+
+    /* fechando a serial */
+    this->serial.close();
 }
 
-/* enviando um byte para cada roda. Futuramente armazenaremos em um byte os valores de velocidade de ambas as rodas >> necessario corrigir robo.hpp robo.cpp tipoEstruturas.hpp e os codigos do arduino. */
 void Radio::enviaDados() {
-    /* aparentemente desnecessario, descomentar em caso de problemas */
-    /* descarta dos dados atualmente na porta ('lixo' de memoria) */
-    tcflush(this->USB, TCIOFLUSH);
 
-    /* o primeiro (dados[0]) eh o caractere inicial para delimitar o inicio de uma nova sequencia de comandos */
-    /* o segundo (dados[1]) eh o valor de velocidade do motor da roda esquerda do primeiro robo */
-    /* o terceiro (dados[2]) eh o valor de velocidade do motor da roda direita do primeiro robo */
-    /* o quarto (dados[3]) eh o valor de velocidade do motor da roda esquerda do segundo robo */
-    /* o quinto (dados[4]) eh o valor de velocidade do motor da roda direita do segundo robo */
-    /* e assim por diante para todos os robos do time em campo */
-    /* os ultimos dois elementos do vetor(bytes) correspondem ao caractere zero */
-
-    unsigned char dados[this->num_bytes_enviados];
-    dados[0] = this->caractere_inicial;
     /* preenchendo o vetor de dados das rodas com os valores de velocidade dos robos */
     for(int i = 0; i < this->vector_robos.size(); i++) {
         /* deslocamos para esquerda os ultimos 4 bits para que eles sejam os primeiros do byte. Para os robos que receberao, apenas os primeiros 4 bytes sao importantes para os robos. */
-        dados[2 * i + 1] = this->vector_robos[i].getVelocidadeAtualRobo().rodaEsq;
-        dados[2 * i + 2] = this->vector_robos[i].getVelocidadeAtualRobo().rodaDir;
+        this->dados_envio[2 * i + 1] = this->vector_robos[i].getVelocidadeAtualRobo().rodaEsq;
+        this->dados_envio[2 * i + 2] = this->vector_robos[i].getVelocidadeAtualRobo().rodaDir;
     }
 
-    /* faz o envio das velocidades de cada roda para a porta serial */
-    if(write(this->USB, dados, this->num_bytes_enviados) < 0)
+    this->serial.write(QByteArray(this->dados_envio, this->num_bytes_enviados));
+
+    /* espera o envio de, pelo menos, um byte para desbloquear a função. Caso não o faça (timeout/erro) retorná falso. */
+    if(this->serial.waitForBytesWritten() == false) {
         std::cerr << "Error " << errno << " @Radio::enviaDados->write " << std::strerror(errno) << std::endl;
+        return;
+    }
+
+}
+
+void Radio::recebeDados() {
+    bool okay_para_escrever = true; /* indica se já podemos passar para a fase de escrita na serial (true) ou não (false) */
+
+    /* esperamos até receber o caracter this->caractere_inicial do arduino para prosseguir. */
+    do {
+        /* aguarda e indica se a serial pode (true) ou não ser lida (false)*/
+        if (this->serial.waitForReadyRead() == false) {
+            std::cerr << "Error " << errno << " @Radio::recebeDados->write " << "Possivel timeout da serial. "
+                      << std::strerror(errno) << std::endl;
+            okay_para_escrever = false;
+        }
+
+        /* faz a leitura da serial de 1 char / byte (que chega na forma de um QByteArray) */
+        QByteArray char_validacao = this->serial.read(1);
+
+        /* verificando se recebemos alguma informação e se recebemos a informação correta (um this->caractere_inicial char)*/
+        if (char_validacao.isEmpty()) {
+            std::cerr << "Error " << "Recebemos dados vazios durante a leitura da serial."
+                      << " @Radio::recebeDados->write " << std::endl;
+
+            okay_para_escrever = false;
+        } else if ((char) char_validacao[0] != this->caractere_inicial) {
+            std::cerr << "Error " << "Recebemos dados nao validos da serial." << "Esperado: "
+                      << (int) this->caractere_inicial << " Recebido: " << (int) char_validacao[0]
+                      << " @Radio::recebeDados->write " << std::endl;
+
+            okay_para_escrever = false;
+        }
+    } while(!okay_para_escrever);
 }
 
 void Radio::comecaComunicacao() {
@@ -109,11 +100,12 @@ void Radio::comecaComunicacao() {
     /* enquanto a comunicacao não é terminanda, faz o envio dos dados para a serial*/
     while(!this->comunicacao_terminada) {
         /* se a comunicação não está em pausa, pode fazer o envio dos dados, senão apenas espera. */
-        if(!this->comunicacao_pausada)
+        if(!this->comunicacao_pausada) {
+            // devemos receber os dados do arduino primeiro antes de enviar dados para ele
+            Radio::recebeDados();
+            // enviamos os dados ao ardunino (estamos certmos de que ele poderá recebe-los)
             Radio::enviaDados();
-
-        /* espera para executar novamente e manter a sincronia com o rádio */
-        std::this_thread::sleep_for(std::chrono::microseconds(this->THREAD_SLEEP_TIME));
+        }
     }
 }
 
@@ -134,13 +126,3 @@ void Radio::recomecaComunicacao() {
     this->comunicacao_pausada = false;
 
 }
-
-void Radio::calculaTempoSleep() {
-    /* calculando o numero total de bits que irão ser enviados pela porta serial */
-    double total_bits = this->num_bytes_enviados * this->BITS_PER_BYTE;
-
-    /* calculando quanto tempo (em microsegundos) vamos precisar para enviar o numero total de bits (total_bits) */
-    this->THREAD_SLEEP_TIME = int((total_bits / this->VELOCIDADE_SERIAL_INT) * 1000000);
-}
-
-

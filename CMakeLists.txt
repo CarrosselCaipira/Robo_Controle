@@ -3,8 +3,9 @@ project(Robo_Controle)
 
 set(CMAKE_CXX_STANDARD 11)
 
-include_directories(.)
+find_package(Qt5Core REQUIRED)
 
+include_directories(.)
 
 add_executable(Robo_Controle
     joystick.cc
@@ -15,6 +16,8 @@ add_executable(Robo_Controle
     robo.hpp
     robos_joystick.cpp
     tipoEstruturas.hpp)
+
+qt5_use_modules(Robo_Controle Core SerialPort)
 
 target_link_libraries(Robo_Controle
         pthread)
