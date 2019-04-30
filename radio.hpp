@@ -36,6 +36,7 @@ class Radio {
     QSerialPort serial;
 
     const unsigned char caractere_inicial = 0x80; /**< envia 0x80 como primeiro byte (header) que sera interpretado pelos robos */
+    const unsigned char caractere_recebido_okay = 0x80; /**< envia 0x80 como primeiro byte (header) que sera interpretado pelos robos */
     const QString caminho_dispositivo = "/dev/ttyUSB0"; /**< caminho para a porta a ser aberta para comunicao serial */
 
     std::vector<Robo>& vector_robos; /**< referencia para o vector que contem os robos  */

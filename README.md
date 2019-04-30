@@ -6,11 +6,31 @@ Para compilar apenas execute o script `configure.sh` e execute o programa digita
 Este código fez uso da biblioteca joystick desenvolvida por [drewnoakes](https://github.com/drewnoakes/joystick).
 
 ----
+## Docker
+
+Este programa possui um ambiente de desenvolvimento e/ou teste docker. É possível adquiri-la a partir do dockerhub atavés do comando: 
+
+`docker pull carrosselcaipira/vss_base:1.0`.
+
+Detalhes sobre o que está contido nesta imagem podem ser encontrados na página do Carrossel Caipira no [dockerhub](https://hub.docker.com/r/carrosselcaipira/vss_base).
+
+Caso queira abrir um terminal que tenha à disposição os componentes contidos no container, execute o comando:
+
+`docker run --rm -it --device=/dev/ttyUSB0 -v $PWD/:/Robo_Controle/ -w /Robo_Controle vss_base:1.0`
+
+Com este comando o container terá acesso aos arquivos da pasta que está com o terminal aberto, logo, certifique-se de que a pasta é a do repositório (Robo_Controle).
+
+A partir deste momento você está com um terminal aberto dentro da imagem fornecida pelo Carrossel, agora só é necessário fazer a compilação da biblioteca através do comando `./configure` (em caso de dúvidas, vá para a sessão [Compilando](##Compilando)).
+
+Com o programa compilado, é necessário apenas executá-lo através do comando `./Robo_Controle` seguindo as instruções da sessão [Rodando o programa](##Rodando o programa).
+    
+----
 ## Compilando
 
 Para compilar o programa é necessário os seguintes pacotes instalados em seu sistema:
  - Um compilador C++ (`gcc-c++` ou `clang`); 
  - `cmake`
+ - QT5 (>= 5.9) com o componente Desktop gcc 64bit; 
 
 Com os pacotes instalados, é apenas necessário rodar o script: `./configure.sh`
 
@@ -64,3 +84,17 @@ Para contribuir criando novos modos de operação dos robos é necessário alter
  5. Na secção abaixo do comentário `/* SETANDO OS VALORES DE VELOCIDADE DOS ROBOS */` adicione seu modo de operação ao switch-case. observe que os case deverá ser o mesmo utilizado na enumeração adicionada no passo 1, siga os exemplos já implementados, provavelmente seu controle é semelhante.
 
  Caso tenha interesse em contribuir de outra forma entre em contato: carrosselcaipira@gmail.com
+ 
+
+----
+## Problemas
+
+### Instalação do QT5 não sendo detectada pelo CMake: 
+
+Caso tenha problemas com a detecção da instalação do QT5 pelo CMake, adicione ele à sua variável ambiente.
+
+Para isso é necessário que você execute o comando: `export PATH=caminho_absoluto_para_pasta_qt5/versao_do_qt/bin:$PATH`
+ 
+Explicações mais bem detalhadas podem ser encontradas em:
+
+http://www.ntu.edu.sg/home/ehchua/programming/howto/environment_variables.html

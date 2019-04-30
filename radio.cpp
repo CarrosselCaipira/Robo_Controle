@@ -4,7 +4,7 @@
 Radio::Radio(std::vector<Robo>& v) : vector_robos(v) {
 
     /* Setando o baundrate de input e output do radio iguais */
-    this->serial.setBaudRate(this->VELOCIDADE_SERIAL, QSerialPort::AllDirections);
+    this->serial.setBaudRate(Radio::VELOCIDADE_SERIAL, QSerialPort::AllDirections);
     /* setando qual o caminho que se encontra / que foi montado o rádio */
     this->serial.setPortName(this->caminho_dispositivo);
 
@@ -46,44 +46,50 @@ void Radio::enviaDados() {
         this->dados_envio[2 * i + 2] = this->vector_robos[i].getVelocidadeAtualRobo().rodaDir;
     }
 
-    this->serial.write(QByteArray(this->dados_envio, this->num_bytes_enviados));
+    qint64 bytesWritten = this->serial.write(QByteArray(this->dados_envio, this->num_bytes_enviados));
 
     /* espera o envio de, pelo menos, um byte para desbloquear a função. Caso não o faça (timeout/erro) retorná falso. */
     if(this->serial.waitForBytesWritten() == false) {
         std::cerr << "Error " << errno << " @Radio::enviaDados->write " << std::strerror(errno) << std::endl;
         return;
     }
+    std::cout << "Escrevemos suave!! bytesWritten: " << bytesWritten << std::endl;
 
 }
 
 void Radio::recebeDados() {
-    bool okay_para_escrever = true; /* indica se já podemos passar para a fase de escrita na serial (true) ou não (false) */
+    bool okay_para_escrever; /* indica se já podemos passar para a fase de escrita na serial (true) ou não (false) */
 
     /* esperamos até receber o caracter this->caractere_inicial do arduino para prosseguir. */
     do {
+        okay_para_escrever = true;
         /* aguarda e indica se a serial pode (true) ou não ser lida (false)*/
         if (this->serial.waitForReadyRead() == false) {
-            std::cerr << "Error " << errno << " @Radio::recebeDados->write " << "Possivel timeout da serial. "
+            std::cerr << "Error " << errno << " @Radio::recebeDados->read " << "Possivel timeout da serial. "
                       << std::strerror(errno) << std::endl;
             okay_para_escrever = false;
         }
+        else {
+            /* faz a leitura da serial de 1 char / byte (que chega na forma de um QByteArray) */
+            QByteArray char_validacao = this->serial.read(1);
 
-        /* faz a leitura da serial de 1 char / byte (que chega na forma de um QByteArray) */
-        QByteArray char_validacao = this->serial.read(1);
+            /* verificando se recebemos alguma informação e se recebemos a informação correta (um this->caractere_inicial char)*/
+            if (char_validacao.isEmpty()) {
+                std::cerr << "Error " << "Recebemos dados vazios durante a leitura da serial."
+                          << " @Radio::recebeDados->read " << std::endl;
 
-        /* verificando se recebemos alguma informação e se recebemos a informação correta (um this->caractere_inicial char)*/
-        if (char_validacao.isEmpty()) {
-            std::cerr << "Error " << "Recebemos dados vazios durante a leitura da serial."
-                      << " @Radio::recebeDados->write " << std::endl;
+                okay_para_escrever = false;
+            } else if ((unsigned char) char_validacao[0] != this->caractere_recebido_okay) {
+                std::cerr << "Error " << "Recebemos dados nao validos da serial." << "Esperado: "
+                          << (int) this->caractere_recebido_okay << " Recebido: " << (int) char_validacao[0]
+                          << " @Radio::recebeDados->read " << std::endl;
 
-            okay_para_escrever = false;
-        } else if ((char) char_validacao[0] != this->caractere_inicial) {
-            std::cerr << "Error " << "Recebemos dados nao validos da serial." << "Esperado: "
-                      << (int) this->caractere_inicial << " Recebido: " << (int) char_validacao[0]
-                      << " @Radio::recebeDados->write " << std::endl;
-
-            okay_para_escrever = false;
+                okay_para_escrever = false;
+            }
         }
+
+        std::cout << "Lemos suave!! okay_para_escrever: " << okay_para_escrever << std::endl;
+
     } while(!okay_para_escrever);
 }
 
@@ -105,6 +111,8 @@ void Radio::comecaComunicacao() {
             Radio::recebeDados();
             // enviamos os dados ao ardunino (estamos certmos de que ele poderá recebe-los)
             Radio::enviaDados();
+
+            std::cout << "Comunicamos suave!!" << std::endl;
         }
     }
 }
