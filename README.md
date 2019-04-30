@@ -93,7 +93,15 @@ Para contribuir criando novos modos de operação dos robos é necessário alter
 
 Caso tenha problemas com a detecção da instalação do QT5 pelo CMake, adicione ele à sua variável ambiente.
 
-Para isso é necessário que você execute o comando: `export PATH=caminho_absoluto_para_pasta_qt5/versao_do_qt/bin:$PATH`
+Para isso é necessário que você execute o comando: `PATH=caminho_absoluto_para_pasta_qt5/versao_do_qt/gcc_64/bin/:$PATH`.
+
+Por exemplo, suponto que a instalação do QT 5.9.8 tenha sido feita na home do usuário danilown, teríamos o seguinte comando:
+
+`PATH=/home/danilown/Qt/5.9.8/gcc_64/bin/:$PATH`
+
+para não ser necessário rodar este comando sempre que abrir um novo terminal, pode-se adicioná-lo ao arquivo `~/.bash_profile`. 
+
+Para isso, abra tal arquivo, e cole, em sua última linha: `export PATH=/home/danilown/Qt/5.9.8/gcc_64/bin/:$PATH` fazenddo as devidas alterações.
  
 Explicações mais bem detalhadas podem ser encontradas em:
 
