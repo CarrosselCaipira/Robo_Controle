@@ -82,6 +82,7 @@ int main(int argc, char const *argv[]) {
   }
 
   /* LOOP Principal */
+  radio.comecaComunicacao(); /* inicializa a thread temporizada que fará o envio dos dados aos robos. */
   while (true) {
     // restricao de tempo para fazermos a leitura e envio das velocidades aos robos
     usleep(Radio::VELOCIDADE_SERIAL);
@@ -192,7 +193,5 @@ int main(int argc, char const *argv[]) {
       // gravando valores de velocidade nos robos
       robos[i].setVelocidadeAtualRobo(rodaEsquerda, rodaDireita);
     }
-    // faz o envio das velocidades para todos os robos via radio
-    radio.enviaDados();
   }
 }

@@ -30,4 +30,14 @@
 *.exe
 *.out
 *.app
-Robos_Joystick
+Robo_Controle
+
+# IDE
+.idea/
+
+# Build folder
+build/
+cmake-build-debug/
+
+# System Files
+.directory

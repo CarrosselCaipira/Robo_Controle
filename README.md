@@ -2,16 +2,44 @@
 
 Programa para o controle dos robôs do VSS através dos controles de PS2. Este código foi criado para funcionar especificamente com sistemas Linux.
 
-Para compilar apenas execute o script `build-robos-joystick.sh` e execute o programa digitando `./Robos_Joystick`
+As instruções contidas aqui serão exclusivamente para sistemas Linux embora alguns componentes sejam indiferentes de plataforma. Contribuições para o porte deste programa para Windows são bem vindas.     
+
+Para compilar apenas execute o script `configure.sh` e execute o programa digitando `./Robo_Controle`
+
 Este código fez uso da biblioteca joystick desenvolvida por [drewnoakes](https://github.com/drewnoakes/joystick).
 
+Em tese, o único elemento que não permite a compilação e uso deste programa no Windows é a biblioteca de leitura do joystick, caso esta seja portada para Windows, este programa deve funcionar sem problemas já que a comunicação com o rádio conectado ao computador é feita utilizando o QT5.  
+
+----
+## Docker
+
+Este programa possui um ambiente de desenvolvimento e/ou teste docker. É possível adquiri-la a partir do dockerhub atavés do comando: 
+
+`docker pull carrosselcaipira/vss_base:1.0`.
+
+Detalhes sobre o que está contido nesta imagem podem ser encontrados na página do Carrossel Caipira no [dockerhub](https://hub.docker.com/r/carrosselcaipira/vss_base).
+
+Caso queira abrir um terminal que tenha à disposição os componentes contidos no container, execute o comando:
+
+`docker run --rm -it --device=/dev/ttyUSB0 -v $PWD/:/Robo_Controle/ -w /Robo_Controle vss_base:1.0`
+
+Com este comando o container terá acesso aos arquivos da pasta que está com o terminal aberto, logo, certifique-se de que a pasta é a do repositório (Robo_Controle).
+
+A partir deste momento você está com um terminal aberto dentro da imagem fornecida pelo Carrossel, agora só é necessário fazer a compilação da biblioteca através do comando `./configure` (em caso de dúvidas, vá para a sessão [Compilando](##Compilando)).
+
+Com o programa compilado, é necessário apenas executá-lo através do comando `./Robo_Controle` seguindo as instruções da sessão [Rodando o programa](##Rodando o programa).
+    
 ----
 ## Compilando
 
-Para compilar o programa é necessário apenas rodar o script:
-`./build-robos-joystick.sh`
+Para compilar o programa é necessário os seguintes pacotes instalados em seu sistema:
+ - Um compilador C++ (`gcc-c++` ou `clang`); 
+ - `cmake`
+ - QT5 (>= 5.9) com o componente Desktop gcc 64bit; 
 
->Obs.: Talves seja necessário tornar o script executável, para isso execute: `chmod +x build-robos-joystick.sh` e execute o comando acima novamente.
+Com os pacotes instalados, é apenas necessário rodar o script: `./configure.sh`
+
+>Obs.: Talves seja necessário tornar o script executável, para isso execute: `chmod +x configure.sh` e execute o comando acima novamente.
 
 ----
 ## Rodando o programa
@@ -27,11 +55,11 @@ Após isso efetue o logout de seu usuário ou reinicie o computador para que est
 O programa agora possui um modo de configuração. Não é possível executá-lo sem informar o número de controles conectados e o modo de operação.
 
 O programa deve ser executado da seguinte forma:
-`./Robos_Joystick NUM_JOYSTICKS MODO_OPERACAO`
+`./Robo_Controle NUM_JOYSTICKS MODO_OPERACAO`
 
 Exemplo:
 
-`./Robos_Joystick 1 0`
+`./Robo_Controle 1 0`
 
 Isso significa que usaremos um controle (logo, apenas um robô) e operaremos ele utlizando o botão analogico do controle (mais detalhes sobre modos de operação abaixo).
 
@@ -61,3 +89,41 @@ Para contribuir criando novos modos de operação dos robos é necessário alter
  5. Na secção abaixo do comentário `/* SETANDO OS VALORES DE VELOCIDADE DOS ROBOS */` adicione seu modo de operação ao switch-case. observe que os case deverá ser o mesmo utilizado na enumeração adicionada no passo 1, siga os exemplos já implementados, provavelmente seu controle é semelhante.
 
  Caso tenha interesse em contribuir de outra forma entre em contato: carrosselcaipira@gmail.com
+ 
+
+----
+## Problemas
+
+A maior parte dos problemas são consequentes de dados errados / desatualizados no cache do CMake. Então, antes de qualquer coisa, sempre apague a pasta `build/` na raiz do projeto e caso o erro persista, abaixo seguem algumas explicações e soluções.
+
+Caso seu problema não esteja listado abaixo, a abertura de [issues](https://github.com/CarrosselCaipira/Robo_Controle/issues) é insentivada.
+
+### Instalação do QT5 não sendo detectada pelo CMake: 
+
+Caso tenha problemas com a detecção da instalação do QT5 pelo CMake, adicione ele à sua variável ambiente.
+
+Nesse caso existem duas opções: Adicioná-la à variavel `PATH` ou à variável específica `Qt5Core_DIR` (recomendado).
+
+#### Utilizando a variável Qt5Core_DIR:
+
+Para isso é necessário que você execute o comando: `export Qt5Core_DIR=caminho_absoluto_para_pasta_qt5/versao_do_qt/gcc_64/`. 
+
+Então, por exemplo, suponto que a instalação do QT 5.9.8 tenha sido feita na home do usuário danilown, teríamos o seguinte comando: `export Qt5Core_DIR=/home/danilown/Qt/5.9.8/gcc_64/`
+
+Note que isso só será válido enquanto o console estiver a aberto, logo terá que executar este comando sempre que abrir um novo console. 
+
+Para não ser necessário rodar os comando acima sempre que abrir um novo terminal, pode-se adicioná-lo ao arquivo `~/.bashrc`.
+
+Para fazê-lo, após ter executado um dos comando acima execute os seguintos comando no mesmo terminal:
+
+```
+echo "" >> ~/.bashrc
+echo "# added by QT5 instalation" >> ~/.bashrc
+echo "export Qt5Core_DIR=${Qt5Core_DIR}" >> ~/.bashrc
+```
+
+Para que essas alterações tenham efeito, feche este terminal e abra um novo. Neste novo terminal, execute o comando `echo $Qt5Core_DIR`. Caso algo seja impresso na tela, você está pronto para compilar o código.
+
+Para explicações mais bem detalhadas sobre variáveis de ambiente, segue(m) o(s) link(s):
+
+http://www.ntu.edu.sg/home/ehchua/programming/howto/environment_variables.html
