@@ -2,42 +2,33 @@
 #define RADIO_H
 
 #include <vector>
-#include <iostream>
 #include <thread>
-#include <chrono>
-#include <stdio.h>
-#include <stdlib.h>
-#include <cstring>   // Para uso da rotina memset
-#include <cerrno> // Para o uso da rotina de indicacao de erro strerror() e da constante errno
-
 #include <QSerialPort>
 #include <QString>
-#include <QByteArray>
-
 #include "robo.hpp"
-
-/* funcionamento:
- *  este programa espera o ardunio (radio) enviar um caractere_inicial (1 byte), geralmente 0x80 para iniciar a comunicação
- *  apos recebida este sinal / byte ele envia ao ardunio na serial (radio) o array contendo a velocidade dos motores, com o mesmo byte inicial na posicao 0 do array (header)
- *  espera o ardunio (radio) enviar um caractere_inicial, geralmente 0x80, para iniciar a comunicação novamente e o ciclo se repete.
- * */
-
 
 /** @class Radio radio.h "radio.hpp"
  *  @brief Classe para a realizacao do envio dos dados para o arduino com o radio que manda as instrucoes para os robos.
  *
- *  A classe faz a configuracao da porta serial, em seguida faz a leitura dos valores de velocidade atual das rodas de todos
- *  os robos do time em campo, desloca os valores de velocidade 4 bits para a esquerda para que possam ser interpretados
- *  corretamente pelos robos e grava esses dados porta serial onde esta o arduino com o radio para que ele faca o envio dessas
- *  informacoes aos robos.
- *  @todo Futuramente tambem implementaremos o recebimento.
+ *  Esta classe faz usodo da biblioteca QT5, mais especificamente, do módulo serial presente na biblioteca. Certifique-se
+ *  de possuir o QT5 instalado.
+ *
+ *  Esta classe faz a configuração e a comunicação pela porta Serial do PC com um arduino conectado na USB.
+ *  Ela irá criar uma nova thread para fazer esta comunicação, já que a comunicação é feita de maneira bloqueante onde
+ *  onde esperamos o arduino confirmar o recebimento para enviar mais informações, enquanto isso não ocorre, a thread dorme.
+ *  Foram implementados métodos de recebimento, mas não estão sendo utilizados no momento. Para habilitar é necessário alterar
+ *  o construtor da classe para leitura e escrita (no momento está apenas para escrita) e fazer a modicações que vir ser necessárias
+ *  no método Radio::recebeDados().
+ *  Funcões de pausa e termino da comunicação também estão disponíveis.
+ *
  */
 class Radio {
     QSerialPort serial;
 
     const unsigned char caractere_inicial = 0x80; /**< envia 0x80 como primeiro byte (header) que sera interpretado pelos robos */
-    const unsigned char caractere_recebido_okay = 0x80; /**< envia 0x80 como primeiro byte (header) que sera interpretado pelos robos */
+    const unsigned char caractere_recebido_okay = 0x0d; /**< recebe 0x0d como primeiro byte (header) vindo do arduino conectado à serial  (momento setado para capturar o ACK da serial do arduino mas não está sendo usado no momento). */
     const QString caminho_dispositivo = "/dev/ttyUSB0"; /**< caminho para a porta a ser aberta para comunicao serial */
+    const int THREAD_SLEEP_TIME = 33; /**< tempo que a thread irá dormir para checar se ainda está pausada. Este tempo está em millisegundos. */
 
     std::vector<Robo>& vector_robos; /**< referencia para o vector que contem os robos  */
     int num_bytes_enviados; /**< Numero de bytes a serem enviados pela serial. Dois bytes para cada robo (um para cada roda) mais um, inicial, que indica o inicio de uma nova sequência. */
@@ -65,14 +56,24 @@ public:
     ~Radio();
 
     /**
-     *
+     * @brief Prepara a thread de comunicação e inicializa a comunicação em uma thread separada.
      */
     void comecaComunicacao();
 
+
+    /**
+     * @brief Termina (fecha) a thread de comunicação, não são mais enviados dados ao rádio conectado à serial. Para reinicializar a comunicação após esta chamada é necessário fazer a chamada para a função comecaComunicacao() novamente.
+     */
     void terminaComunicacao();
 
+    /**
+     * @brief Pausa o envio de dados para a serial. A thread continua executando, apenas não faz a escrita na serial do arduino. Para reativar a comunicação, deve ser feita a chamada para a função recomecaComunicacao(). A thread do rádio irá dormir por Radio::THREAD_SLEEP_TIME antes de checar se não está mais em pausa.
+     */
     void pausaComunicacao();
 
+    /**
+     *
+     */
     void recomecaComunicacao();
 
 private:
@@ -81,6 +82,10 @@ private:
      */
     void enviaDados();
 
+
+    /**
+     * Quando o rádio é aberto para leitura e escrita no construtor, faz a leitura da serial. Este metodo não está sendo usado e pode ser necessário reescreve-lo. Foi mantido com o principio de ser utilizado como base,
+     */
     void recebeDados();
 
 

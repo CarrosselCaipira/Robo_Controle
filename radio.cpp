@@ -1,3 +1,11 @@
+#include <iostream>
+#include <chrono>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstring>   // Para uso da rotina memset
+#include <cerrno> // Para o uso da rotina de indicacao de erro strerror() e da constante errno
+#include <QByteArray>
+
 #include "radio.hpp"
 
 /* o trecho: vector_robos(v) serve para acoplar o vector com os robos a classe de transmissao */
@@ -8,8 +16,8 @@ Radio::Radio(std::vector<Robo>& v) : vector_robos(v) {
     /* setando qual o caminho que se encontra / que foi montado o rádio */
     this->serial.setPortName(this->caminho_dispositivo);
 
-    /* tentando abrir o dispositivo para leitura e escrita */
-    if (!serial.open(QIODevice::ReadWrite)) {
+    /* tentando abrir o dispositivo para apenas escrita */
+    if (!serial.open(QIODevice::WriteOnly)) {
         std::cerr << "Erro " << errno << " @Radio->open: " << std::strerror(errno) << std::endl;
         exit(1); /* Nao permite que o programa rode se nao foi possivel configurar a porta serial */
     }
@@ -53,8 +61,6 @@ void Radio::enviaDados() {
         std::cerr << "Error " << errno << " @Radio::enviaDados->write " << std::strerror(errno) << std::endl;
         return;
     }
-    std::cout << "Escrevemos suave!! bytesWritten: " << bytesWritten << std::endl;
-
 }
 
 void Radio::recebeDados() {
@@ -88,8 +94,6 @@ void Radio::recebeDados() {
             }
         }
 
-        std::cout << "Lemos suave!! okay_para_escrever: " << okay_para_escrever << std::endl;
-
     } while(!okay_para_escrever);
 }
 
@@ -107,12 +111,14 @@ void Radio::comecaComunicacao() {
     while(!this->comunicacao_terminada) {
         /* se a comunicação não está em pausa, pode fazer o envio dos dados, senão apenas espera. */
         if(!this->comunicacao_pausada) {
-            // devemos receber os dados do arduino primeiro antes de enviar dados para ele
-            Radio::recebeDados();
+            // devemos receber os dados do arduino primeiro antes de enviar dados para ele (no, momento, não estamos fazendo uso da comunicação bidirecional, por isso mantenha a linha abaixo comentada)
+            //Radio::recebeDados();
             // enviamos os dados ao ardunino (estamos certmos de que ele poderá recebe-los)
             Radio::enviaDados();
-
-            std::cout << "Comunicamos suave!!" << std::endl;
+        }
+        else {
+            /* evitando que esta thread ocupe 100% de uma CPU, colocamos um delay para checagem se a comunicação foi reinicializada. */
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->THREAD_SLEEP_TIME));
         }
     }
 }
